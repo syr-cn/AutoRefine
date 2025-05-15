@@ -1,8 +1,7 @@
-WORK_DIR="/mnt/finder/shiyr/code/R1/Search-R1"
+WORK_DIR="."
 LOCAL_DIR=$WORK_DIR/data/nq_hotpotqa_train_autorefine
 template_type="autorefine"
 
-export HF_ENDPOINT=https://hf-mirror.com
 mkdir -p $LOCAL_DIR
 echo "Data Format: $template_type" >> $LOCAL_DIR/datasource.txt
 

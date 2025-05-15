@@ -3,10 +3,10 @@ export CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7"
 num_gpus=8
 data_name="nq_hotpotqa_train_autorefine"
 export DATA_DIR="data/${data_name}"
-export HF_ENDPOINT=https://hf-mirror.com
 
 wandb_token="XXX"
-export WANDB_MODE="diabled"
+WAND_PROJECT="YYY"
+export WANDB_MODE="disabled"
 export WANDB_API_KEY=$wandb_token
 export VLLM_ATTENTION_BACKEND=XFORMERS
 
@@ -14,6 +14,7 @@ export BASE_MODEL='Qwen/Qwen2.5-3B'
 export EXPERIMENT_NAME="$data_name-autorefine-qwen2.5-3b"
 
 
+mkdir -p log/
 PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     reward_model.reward_style="F1" \
     data.train_files=$DATA_DIR/train.parquet \

@@ -28,7 +28,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--local_dir', default='./data/nq_search')
     parser.add_argument('--hdfs_dir', default=None)
-    parser.add_argument('--template_type', type=str, default='base')
+    parser.add_argument('--template_type', type=str, default='autorefine')
     parser.add_argument('--data_sources', default='nq')
     parser.add_argument('--filename', default='test')
     parser.add_argument('--n_subset', type=int, default=0, help='number of samples to subset')

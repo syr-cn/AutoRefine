@@ -1,6 +1,11 @@
 wandb
 verl_checkpoints
+log
+outputs
+data
 debug*
 tmp*
 *.bak
 models
+__pycache__/
+verl.egg-info

@@ -358,14 +358,14 @@ def main_task(config):
         role_worker_mapping[Role.RewardModel] = ray.remote(RewardModelWorker)
         mapping[Role.RewardModel] = global_pool_id
 
-    train_log_jsonl = f'/mnt/finder/shiyr/code/R1/Search-R1/log/train/{config.trainer.experiment_name}.jsonl'
+    train_log_jsonl = f'log/train/{config.trainer.experiment_name}.jsonl'
     refine_score = config.actor_rollout_ref.actor.refine_score
     format_score = config.actor_rollout_ref.actor.format_score
     reward_style = config.reward_model.reward_style
     reward_fn = RewardManager(tokenizer=tokenizer, num_examine=config.reward_model.train_num_examine, log_path=train_log_jsonl, format_score=format_score, refine_score=refine_score, reward_style=reward_style)
 
     # Note that we always use function-based RM for validation
-    val_log_jsonl = f'/mnt/finder/shiyr/code/R1/Search-R1/log/val/{config.trainer.experiment_name}.jsonl'
+    val_log_jsonl = f'log/val/{config.trainer.experiment_name}.jsonl'
     val_reward_fn = RewardManager(tokenizer=tokenizer, num_examine=config.reward_model.val_num_examine, log_path=val_log_jsonl, reward_style=reward_style)
 
     resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)

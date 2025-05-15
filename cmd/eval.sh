@@ -1,15 +1,16 @@
 export CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7"
 num_gpus=8
 data_name="nq_hotpotqa_train_autorefine"
-export HF_ENDPOINT=https://hf-mirror.com
 
 wandb_token="XXX"
-export WANDB_MODE="diabled"
+WAND_PROJECT="YYY"
+export WANDB_MODE="disabled"
 export VLLM_ATTENTION_BACKEND=XFORMERS
 export BASE_MODEL="xxx"
 export EXPERIMENT_NAME="eval-autorefine"
 
 export DATA_DIR=data/${data_name}
+mkdir -p log/val
 PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     reward_model.reward_style="F1" \
     data.train_files=$DATA_DIR/train.parquet \
@@ -26,9 +27,6 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     data.shuffle_train_dataloader=true \
     algorithm.adv_estimator=grpo \
     algorithm.filter_groups.enable=false \
-    algorithm.filter_groups.method=dapo \
-    algorithm.filter_groups.metric="token_level_scores" \
-    algorithm.filter_groups.max_num_gen_batches=10 \
     actor_rollout_ref.model.path=$BASE_MODEL \
     actor_rollout_ref.model.enable_gradient_checkpointing=true \
     actor_rollout_ref.model.use_remove_padding=True \

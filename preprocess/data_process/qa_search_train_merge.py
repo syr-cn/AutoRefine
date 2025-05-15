@@ -29,7 +29,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--local_dir', default='./data/nq_search')
     parser.add_argument('--hdfs_dir', default=None)
-    parser.add_argument('--template_type', type=str, default='base')
+    parser.add_argument('--template_type', type=str, default='autorefine')
     parser.add_argument('--data_sources', default='nq')
 
     args = parser.parse_args()
@@ -37,12 +37,6 @@ if __name__ == '__main__':
     # data_source = 'nq'
     data_sources = args.data_sources.split(',')
     all_dataset = []
-    cache_file_path = './data/search.json'
-    if not os.path.exists(cache_file_path):
-        cache_data = {}
-    else:
-        with open(cache_file_path, 'r') as f:
-            cache_data = json.load(f)
 
     for data_source in data_sources:
 
@@ -63,15 +57,6 @@ if __name__ == '__main__':
                     "target": example['golden_answers'],
                 }
 
-                str_question = example['question']
-                if str_question in cache_data:
-                    doc_str = cache_data[str_question]
-                else:
-                    doc_str = search(str_question)
-                    cache_data[str_question] = doc_str
-                    if random.randint(0, 100) ==0: # save every 100 times
-                        with open(cache_file_path, 'w') as f:
-                            json.dump(cache_data, f)
                 data = {
                     "data_source": data_source,
                     "prompt": [{
@@ -94,9 +79,6 @@ if __name__ == '__main__':
 
         train_dataset = train_dataset.map(function=make_map_fn('train'), with_indices=True)
         all_dataset.append(train_dataset)
-        with open(cache_file_path, 'w') as f:
-            json.dump(cache_data, f)
-    
 
     local_dir = args.local_dir
     hdfs_dir = args.hdfs_dir
@@ -104,7 +86,6 @@ if __name__ == '__main__':
     all_train_dataset = datasets.concatenate_datasets(all_dataset)
     all_train_dataset = all_train_dataset.shuffle(seed=42)
 
-    print(all_train_dataset[0])
     all_train_dataset.to_parquet(os.path.join(local_dir, 'train.parquet'))
 
     assert hdfs_dir is None
