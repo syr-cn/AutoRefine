@@ -1,4 +1,10 @@
-# autorefine-private
+# AutoRefine
+
+Official implementation of paper *Search and Refine During Think: Autonomous Retrieval‑Augmented Reasoning of LLMs*.
+
+Checkpoints available at [HuggingFace](https://huggingface.co/yrshi/AutoRefine-Qwen2.5-3B-Base).
+
+This project is built upon [VeRL](https://github.com/volcengine/verl) and [Search-R1](https://github.com/PeterGriffinJin/Search-R1). Thans for their great work.
 
 ## Installation
 

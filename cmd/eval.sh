@@ -6,7 +6,7 @@ wandb_token="XXX"
 WAND_PROJECT="YYY"
 export WANDB_MODE="disabled"
 export VLLM_ATTENTION_BACKEND=XFORMERS
-export BASE_MODEL="xxx"
+export BASE_MODEL="yrshi/AutoRefine-Qwen2.5-3B-Base"
 export EXPERIMENT_NAME="eval-autorefine"
 
 export DATA_DIR=data/${data_name}
