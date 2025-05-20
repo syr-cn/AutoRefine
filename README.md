@@ -2,11 +2,22 @@
 
 Official implementation of paper *Search and Refine During Think: Autonomous Retrieval‑Augmented Reasoning of LLMs*.
 
-Checkpoints available at [HuggingFace](https://huggingface.co/yrshi/AutoRefine-Qwen2.5-3B-Base).
+AutoRefine is an RL post-training framework that adopts a new "search-and-refine-during-think" paradigm. It introduces:
+- explicit knowledge refinement steps between successive search calls, enabling the model to iteratively filter, distill, and organize evidence before generating an answer.
+- tailored retrieval-specific rewards alongside answer correctness rewards to guide the searching behaviors.
 
-This project is built upon [VeRL](https://github.com/volcengine/verl) and [Search-R1](https://github.com/PeterGriffinJin/Search-R1). Thans for their great work.
+![Innovations](assets/innovations.jpg)
 
-## Installation
+![Main Results](assets/main_results.jpg)
+
+
+## 🔥News
+
+- Paper is available on \[[Arxiv](https://www.arxiv.org/pdf/2505.11277)\]
+- Checkpoints are released at \[[🤗HuggingFace](https://huggingface.co/yrshi/AutoRefine-Qwen2.5-3B-Base)\].
+
+
+## 🛠️Installation
 
 **Main Environment**
 
@@ -42,7 +53,7 @@ conda install -c pytorch -c nvidia faiss-gpu=1.8.0
 pip install uvicorn fastapi
 ```
 
-## Data Preparation
+## 📂Data Preparation
 
 ### Retrieval Corpus
 
@@ -63,7 +74,7 @@ bash preprocess/scripts/data_process.sh
 ```
 This will merge the training set of NQ and HotpotQA as the training data, and merge the test/dev sets of `nq,triviaqa,popqa,hotpotqa,2wikimultihopqa,musique,bamboogle` as the test set.
 
-## Reproduction
+## 🚀Reproduction
 
 ### Retirever Server
 
@@ -93,7 +104,18 @@ conda activate autorefine
 bash cmd/eval.sh
 ```
 
-## Acknowledgements
+## 🙏Acknowledgements
 
 This project is built upon the foundational work of [VeRL](https://github.com/volcengine/verl) and [Search-R1](https://github.com/PeterGriffinJin/Search-R1).
 We sincerely thank the authors of these projects for their valuable contributions, which have significantly supported and inspired our work.
+
+## 🎓Citations
+
+```latex
+@article{AutoRefine,
+    title={Search and Refine During Think: Autonomous Retrieval-Augmented Reasoning of LLMs},
+    author={Yaorui, Shi and Shihan, Li and Chang, Wu and Zhiyuan, Liu and Junfeng, Fang and Hengxing, Cai and An, Zhang and Xiang, Wang},
+    journal={arXiv preprint arXiv:2505.11277},
+    year={2025}
+}
+```
