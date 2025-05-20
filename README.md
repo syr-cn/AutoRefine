@@ -3,8 +3,8 @@
 Official implementation of paper *Search and Refine During Think: Autonomous Retrieval‑Augmented Reasoning of LLMs*.
 
 AutoRefine is an RL post-training framework that adopts a new "search-and-refine-during-think" paradigm. It introduces:
-- explicit knowledge refinement steps between successive search calls, enabling the model to iteratively filter, distill, and organize evidence before generating an answer.
-- tailored retrieval-specific rewards alongside answer correctness rewards to guide the searching behaviors.
+- explicit **knowledge refinement steps** between successive search calls, enabling the model to iteratively filter, distill, and organize evidence before generating an answer.
+- tailored **retrieval-specific rewards** alongside answer correctness rewards to guide the searching behaviors.
 
 ![Innovations](assets/innovations.jpg)
 
