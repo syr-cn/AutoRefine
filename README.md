@@ -6,6 +6,8 @@ AutoRefine is an RL post-training framework that adopts a new "search-and-refine
 - explicit **knowledge refinement steps** between successive search calls, enabling the model to iteratively filter, distill, and organize evidence before generating an answer.
 - tailored **retrieval-specific rewards** alongside answer correctness rewards to guide the searching behaviors.
 
+![Innovations](assets/radar_plot.jpg)
+
 ![Innovations](assets/innovations.jpg)
 
 ![Main Results](assets/main_results.jpg)
