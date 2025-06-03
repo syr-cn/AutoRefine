@@ -1,12 +1,14 @@
 wandb
-verl_checkpoints
-log
-outputs
-data
-tmp*
+/verl_checkpoints
+/log
+/outputs
+/data
+/debug
+/tmp*
+/models
+/verl.egg-info
+/scripts
 *.bak
-verl.egg-info
-scripts
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
