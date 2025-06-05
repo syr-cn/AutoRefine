@@ -55,7 +55,6 @@
               style="display: flex;flex-direction: row;align-items: center;justify-content: center;margin-bottom: 5px;">Search and Refine During Think:</h1>
           <h1 class="title is-2 publication-title">Autonomous Retrieval‑Augmented Reasoning of LLMs</h1>
           <div class="is-size-5 publication-authors">
-            Yaorui Shi, Sihang Li, Chang Wu, Zhiyuan Liu, Junfeng Fang, Hengxing Cai, An Zhang, Xiang Wang
             <span class="author-block"> <a href="https://scholar.google.com/citations?user=EWU3rdIAAAAJ&hl=en">Yaorui Shi</a><sup>1*</sup>,</span>
             <span class="author-block"> <a href="https://scholar.google.com/citations?user=1uFZs6EAAAAJ&hl=en">Sihang Li</a><sup>1*</sup>,</span>
             <span class="author-block"> Chang Wu<sup>1</sup>,</span>
@@ -157,7 +156,7 @@
     <!--/ Abstract. -->
     <br>
     </div>
-    <img class="columns is-centered has-text-centered framework" src="./static/images/radar_plot.jpg" alt="Teaser" width="100%" style="margin:0 auto">
+    <img class="columns is-centered has-text-centered framework" src="./static/images/radar_plot.jpg" alt="Teaser" width="80%" style="margin:0 auto">
 </section>
 
 
@@ -173,7 +172,7 @@
         <div class="columns is-centered">
           <div class="column is-full-width">
               <div class="content has-text-justified">
-                  <img class="columns is-centered has-text-centered framework" src="./static/images/innovations.jpg" alt="innovation" width="100%" style="margin:0 auto">
+                  <img class="columns is-centered has-text-centered framework" src="./static/images/innovations.jpg" alt="innovation" width="80%" style="margin:0 auto">
                   <br>
                   <p>
                     Current retrieval-augmented reasoning approaches face two key limitations:
@@ -210,7 +209,7 @@
         <div class="columns is-centered">
           <div class="column is-full-width">
             <div class="content has-text-justified">
-              <img class="columns is-centered has-text-centered framework" src="./static/images/grpo.jpg" alt="Paradigm" width="100%" style="margin:0 auto">
+              <img class="columns is-centered has-text-centered framework" src="./static/images/grpo.jpg" alt="Paradigm" width="80%" style="margin:0 auto">
               <br>
               <p>
                 At the core of AutoRefine is a novel "search-and-refine-during-think" paradigm that extends the traditional "search-during-think" approach. This paradigm allows the LLM to:
@@ -284,15 +283,15 @@
                     <li>
                       <b>The model shows particularly strong performance on multi-hop QA tasks,</b> demonstrating its ability to effectively handle complex reasoning that requires multiple pieces of information.
                     </li>
-                    <img class="columns is-centered has-text-centered framework" src="./static/images/main_results.jpg" alt="Overall Performance" width="100%" style="margin:0 auto">
+                    <img class="columns is-centered has-text-centered framework" src="./static/images/main_results.jpg" alt="Overall Performance" width="80%" style="margin:0 auto">
                     <li>
                       <b>The search frequency increases during training,</b> especially for multi-hop questions, showing that the model learns to perform more searches when dealing with complex queries.
                     </li>
-                    <img class="columns is-centered has-text-centered framework" src="./static/images/search_behavior.jpg" alt="Search Behavior" width="100%" style="margin:0 auto">
+                    <img class="columns is-centered has-text-centered framework" src="./static/images/search_behavior.jpg" alt="Search Behavior" width="80%" style="margin:0 auto">
                     <li>
                       <b>The refinement process successfully extracts crucial information from retrieved documents</b>.
                     </li>
-                    <img class="columns is-centered has-text-centered framework" src="./static/images/refine_behavior.jpg" alt="Refine Behavior" width="100%" style="margin:0 auto">
+                    <img class="columns is-centered has-text-centered framework" src="./static/images/refine_behavior.jpg" alt="Refine Behavior" width="80%" style="margin:0 auto">
                     </ul>
                   </p>
               </div>
@@ -311,11 +310,11 @@
                     <li>
                       AutoRefine maintains high performance across different retrieval depths (number of documents retrieved per search), with the best results achieved at k=5.
                     </li>
-                    <img class="columns is-centered has-text-centered framework" src="./static/images/ablation.jpg" alt="Ablation" width="50%" style="margin:0 auto">
+                    <img class="columns is-centered has-text-centered framework" src="./static/images/top_k.jpg" alt="Ablation" width="50%" style="margin:0 auto">
                     <li>
                       Models trained with retrieval-specific rewards show improved search frequency, search quality, and refinement quality compared to models trained with only outcome-based rewards.
                     </li>
-                    <img class="columns is-centered has-text-centered framework" src="./static/images/ablation.jpg" alt="Ablation" width="100%" style="margin:0 auto">
+                    <img class="columns is-centered has-text-centered framework" src="./static/images/ablation.jpg" alt="Ablation" width="80%" style="margin:0 auto">
                     </ul>
                   </p>
               </div>
