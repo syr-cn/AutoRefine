@@ -777,17 +777,14 @@ class RayPPOTrainer(object):
         if self.val_reward_fn is not None and self.config.trainer.get('val_before_train', True):
             val_metrics = self._validate()
 
-            print(f'Eval Answer EM:')
-            for key in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle', 'mean']:
-                val_key = f'val/answer_em/{key}'
-                val = val_metrics.get(val_key, None)
-                print(f'{val_key}: {val}')
+            all_print_val_metrics = ['answer_f1', 'answer_em', 'answer_cem']
 
-            print(f'Eval Answer F1:')
-            for key in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle', 'mean']:
-                val_key = f'val/answer_f1/{key}'
-                val = val_metrics.get(val_key, None)
-                print(f'{val_key}: {val}')
+            for metric_name in all_print_val_metrics:
+                print(f'Eval {metric_name}:')
+                for key in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle', 'mean']:
+                    val_key = f'val/{metric_name}/{key}'
+                    val = val_metrics.get(val_key, None)
+                    print(f'{val_key}: {val}')
 
             logger.log(data=val_metrics, step=self.global_steps)
             if self.config.trainer.get('val_only', False):
