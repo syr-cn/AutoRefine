@@ -172,11 +172,11 @@ def extract_solution(solution_str):
     # If there are 2 or more matches, return the last one
     return matches[-1].group(1).strip()
 
-def compute_score_format(solution_str, ground_truth, format_score=0.1):
+def compute_score_format(solution_str, ground_truth, format_score=0.0):
     format_validity = validate_format(solution_str)
     return format_validity
 
-def compute_score_f1(solution_str, ground_truth, format_score=0.1, refine_score=0.0):
+def compute_score_f1(solution_str, ground_truth, format_score=0.0, refine_score=0.0, do_print_frac=-1):
     """The scoring function for exact match (EM).
 
     Args:
@@ -187,14 +187,15 @@ def compute_score_f1(solution_str, ground_truth, format_score=0.1, refine_score=
         score: the score for the correct answer
     """
     answer = extract_solution(solution_str=solution_str)
-    do_print = random.randint(1, 1024) == 1
+    do_print = random.randint(1, do_print_frac) == 1 if do_print_frac > 0 else False
     
     if do_print:
-        print(f"--------------------------------")
+        print(f"--------------Begin Case--------------")
         print(f"Golden answers: {ground_truth['target']}")
         print(f"Extracted answer: {answer}")
         print(f"Solution string: {solution_str}")
-    
+        print(f"--------------End Case--------------")
+
     if answer is None:
         return 0
     else:
@@ -212,7 +213,7 @@ def compute_score_f1(solution_str, ground_truth, format_score=0.1, refine_score=
                 score += refine_score
             return score
 
-def compute_score_em(solution_str, ground_truth, method='strict', format_score=0., score=1., refine_score=0.0):
+def compute_score_em(solution_str, ground_truth, method='strict', format_score=0., score=1., refine_score=0.0, do_print_frac=-1):
     """The scoring function for exact match (EM).
 
     Args:
@@ -223,13 +224,14 @@ def compute_score_em(solution_str, ground_truth, method='strict', format_score=0
         score: the score for the correct answer
     """
     answer = extract_solution(solution_str=solution_str)
-    do_print = random.randint(1, 1024) == 1
+    do_print = random.randint(1, do_print_frac) == 1 if do_print_frac > 0 else False
     
     if do_print:
-        print(f"--------------------------------")
+        print(f"--------------Begin Case--------------")
         print(f"Golden answers: {ground_truth['target']}")
         print(f"Extracted answer: {answer}")
         print(f"Solution string: {solution_str}")
+        print(f"--------------End Case--------------")
 
     if answer is None:
         return 0
@@ -248,7 +250,6 @@ def compute_score_em(solution_str, ground_truth, method='strict', format_score=0
                 score += refine_score
             return score
 
-
 def compute_score_subem(solution_str, ground_truth, method='strict', format_score=0., score=1.):
     """The scoring function for substring exact match (EM).
 
@@ -260,7 +261,6 @@ def compute_score_subem(solution_str, ground_truth, method='strict', format_scor
         score: the score for the correct answer
     """
     answer = extract_solution(solution_str=solution_str)
-    do_print = random.randint(1, 1024) == 1
     if answer is None:
         return 0
     else:

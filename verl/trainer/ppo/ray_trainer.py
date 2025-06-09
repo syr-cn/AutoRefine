@@ -181,11 +181,6 @@ def compute_data_metrics(batch, use_critic=True):
     # TODO: add response length
     sequence_score = batch.batch['token_level_scores'].sum(-1)
     sequence_reward = batch.batch['token_level_rewards'].sum(-1)
-    info_scores = batch.batch['token_level_information_scores'].sum(-1)
-    reverse_rank_scores = batch.batch['token_level_information_reverse_rank'].sum(-1)
-    answer_scores = batch.batch['token_level_answer_scores'].sum(-1)
-    refine_scores = batch.batch['token_level_refine_scores'].sum(-1)
-    format_scores = batch.batch['token_level_format_scores'].sum(-1)
 
     advantages = batch.batch['advantages']
     returns = batch.batch['returns']
@@ -204,90 +199,37 @@ def compute_data_metrics(batch, use_critic=True):
     valid_adv = torch.masked_select(advantages, response_mask)
     valid_returns = torch.masked_select(returns, response_mask)
 
+    metrics = {
+        'response_length/clip_ratio': torch.mean(torch.eq(response_length, max_response_length).float()).detach().item(),
+        'prompt_length/clip_ratio': torch.mean(torch.eq(prompt_length, max_prompt_length).float()).detach().item(),
+    }
     if use_critic:
         values = batch.batch['values']
         valid_values = torch.masked_select(values, response_mask)
         return_diff_var = torch.var(valid_returns - valid_values)
         return_var = torch.var(valid_returns)
+        metrics['critic/vf_explained_var'] = (1.0 - return_diff_var / (return_var + 1e-5)).detach().item()
 
-    metrics = {
-        # score
-        'critic/score/mean':
-            torch.mean(sequence_score).detach().item(),
-        'critic/score/max':
-            torch.max(sequence_score).detach().item(),
-        'critic/score/min':
-            torch.min(sequence_score).detach().item(),
-        # reward
-        'critic/rewards/mean':
-            torch.mean(sequence_reward).detach().item(),
-        'critic/rewards/max':
-            torch.max(sequence_reward).detach().item(),
-        'critic/rewards/min':
-            torch.min(sequence_reward).detach().item(),
-        # adv
-        'critic/advantages/mean':
-            torch.mean(valid_adv).detach().item(),
-        'critic/advantages/max':
-            torch.max(valid_adv).detach().item(),
-        'critic/advantages/min':
-            torch.min(valid_adv).detach().item(),
-        # returns
-        'critic/returns/mean':
-            torch.mean(valid_returns).detach().item(),
-        'critic/returns/max':
-            torch.max(valid_returns).detach().item(),
-        'critic/returns/min':
-            torch.min(valid_returns).detach().item(),
-        **({
-            # values
-            'critic/values/mean': torch.mean(valid_values).detach().item(),
-            'critic/values/max': torch.max(valid_values).detach().item(),
-            'critic/values/min': torch.min(valid_values).detach().item(),
-            # vf explained var
-            'critic/vf_explained_var': (1.0 - return_diff_var / (return_var + 1e-5)).detach().item(),
-        } if use_critic else {}),
-        **({
-            'critic/info_score/mean': torch.mean(info_scores).detach().item(),
-            'critic/info_score/max': torch.max(info_scores).detach().item(),
-            'critic/info_score/min': torch.min(info_scores).detach().item(),
-        } if (info_scores is not None) else {}),
-        **({
-            'critic/refine_score/mean': torch.mean(refine_scores).detach().item(),
-            'critic/refine_score/max': torch.max(refine_scores).detach().item(),
-            'critic/refine_score/min': torch.min(refine_scores).detach().item(),
-        } if (refine_scores is not None) else {}),
-        **({
-            'critic/answer_scores/mean': torch.mean(answer_scores).detach().item(),
-            'critic/answer_scores/max': torch.max(answer_scores).detach().item(),
-            'critic/answer_scores/min': torch.min(answer_scores).detach().item(),
-        } if (answer_scores is not None) else {}),
-        **({
-            'critic/reverse_rank_scores/mean': torch.mean(reverse_rank_scores).detach().item(),
-            'critic/reverse_rank_scores/max': torch.max(reverse_rank_scores).detach().item(),
-            'critic/reverse_rank_scores/min': torch.min(reverse_rank_scores).detach().item(),
-        } if (reverse_rank_scores is not None) else {}),
-        'critic/format_scores/mean': torch.mean(format_scores).detach().item(),
-
-        # response length
-        'response_length/mean':
-            torch.mean(response_length).detach().item(),
-        'response_length/max':
-            torch.max(response_length).detach().item(),
-        'response_length/min':
-            torch.min(response_length).detach().item(),
-        'response_length/clip_ratio':
-            torch.mean(torch.eq(response_length, max_response_length).float()).detach().item(),
-        # prompt length
-        'prompt_length/mean':
-            torch.mean(prompt_length).detach().item(),
-        'prompt_length/max':
-            torch.max(prompt_length).detach().item(),
-        'prompt_length/min':
-            torch.min(prompt_length).detach().item(),
-        'prompt_length/clip_ratio':
-            torch.mean(torch.eq(prompt_length, max_prompt_length).float()).detach().item(),
-    }
+    for key, value in {
+        'critic/score': sequence_score,
+        'critic/rewards': sequence_reward,
+        'critic/advantages': valid_adv,
+        'critic/returns': valid_returns,
+        'critic/values': valid_values if use_critic else None,
+        'critic/info_score': batch.batch['information_scores'],
+        'critic/reverse_rank_scores': batch.batch['information_reverse_rank'],
+        'critic/answer_em': batch.batch['answer_em'],
+        'critic/answer_f1': batch.batch['answer_f1'],
+        'critic/refine_scores': batch.batch['refine_scores'],
+        'critic/format_scores': batch.batch['format_scores'],
+        'response_length': response_length,
+        'prompt_length': prompt_length,
+    }.items():
+        if value is not None:
+            metrics[f'{key}/mean'] = torch.mean(value).detach().item()
+            metrics[f'{key}/max'] = torch.max(value).detach().item()
+            metrics[f'{key}/min'] = torch.min(value).detach().item()
+            metrics[f'{key}/std'] = torch.std(value).detach().item()
 
     # metrics for actions
     if 'turns_stats' in batch.meta_info:
@@ -519,13 +461,8 @@ class RayPPOTrainer(object):
         Accumulates metrics across all batches before computing final statistics.
         """
         import torch
-        accuracy_tensor_lst = []
         data_source_lst = []
-        token_level_scores = {
-            'information_scores': [],
-            'information_reverse_rank': [],
-            'refine_scores': [],
-        }
+        all_eval_scores = defaultdict(list)
             # metrics for actions
         gen_key_map = {
             'turns_stats': 'number_of_actions',
@@ -618,56 +555,41 @@ class RayPPOTrainer(object):
                     
                     # evaluate using reward_function
                     # for certain reward function (e.g. sandbox), the generation can overlap with reward
-                    reward_tensor = self.val_reward_fn.get_answer_em(test_batch)
-                    
-                    token_level_information_scores = self.reward_fn.get_subem(test_batch)
-                    token_level_information_reverse_rank = self.reward_fn.get_reverse_rank(test_batch)
-                    token_level_refine_scores = self.reward_fn.get_refine_subem(test_batch)
-                    token_level_scores['information_scores'].append(token_level_information_scores)
-                    token_level_scores['information_reverse_rank'].append(token_level_information_reverse_rank)
-                    token_level_scores['refine_scores'].append(token_level_refine_scores)
+                    eval_scores = self.reward_fn.get_additional_scores(test_batch)
+                    for key, value in eval_scores.items():
+                        all_eval_scores[key].append(value)
                     for key, value in gen_key_map.items():
                         medata_dict[value].extend(test_batch.meta_info[key])
 
-                    accuracy_tensor_lst.append(reward_tensor)
-                    data_source_lst.append(test_batch.non_tensor_batch.get('data_source', ['unknown'] * reward_tensor.shape[0]))
+                    data_source_lst.append(test_batch.non_tensor_batch.get('data_source', ['unknown'] * test_batch.batch['responses'].shape[0]))
 
         data_sources = np.concatenate(data_source_lst, axis=0)
-        reward_tensor = torch.cat([rw.sum(-1) for rw in accuracy_tensor_lst], dim=0).cpu()  # (batch_size,)
-        assert len(reward_tensor) == len(data_sources), f'reward_tensor length mismatch, {len(reward_tensor)} vs {len(data_sources)}'
-        for key in token_level_scores.keys():
-            token_level_scores[key] = torch.cat([rw.sum(-1) for rw in token_level_scores[key]], dim=0).cpu()
-            assert len(token_level_scores[key]) == len(data_sources), f'{key} length mismatch, {len(token_level_scores[key])} vs {len(data_sources)}'
+        for key in all_eval_scores.keys():
+            all_eval_scores[key] = torch.cat(all_eval_scores[key], dim=0).cpu()
+            assert len(all_eval_scores[key]) == len(data_sources), f'{key} length mismatch, {len(all_eval_scores[key])} vs {len(data_sources)}'
+        if self.config.reward_model.reward_style.lower() == 'em':
+            test_scores = all_eval_scores['answer_em']
+        elif self.config.reward_model.reward_style.lower() == 'f1':
+            test_scores = all_eval_scores['answer_f1']
+        all_eval_scores['test_score'] = test_scores * 100.0
         for key in medata_dict.keys():
             assert len(medata_dict[key]) == len(data_sources), f'{key} length mismatch, {len(medata_dict[key])} vs {len(data_sources)}'
         # evaluate test_score based on data source
-        data_source_reward = {}
-        for i in range(reward_tensor.shape[0]):
-            data_source = data_sources[i]
-            if data_source not in data_source_reward:
-                data_source_reward[data_source] = []
-            data_source_reward[data_source].append(reward_tensor[i].item())
 
         SINGLE_DATA_SOURCES = ['nq', 'popqa', 'triviaqa']
         MULTI_DATA_SOURCES = ['hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle']
         ALL_DATA_SOURCES = SINGLE_DATA_SOURCES + MULTI_DATA_SOURCES
         metric_dict = {}
-        mean_metrics = 0
-        for data_source, rewards in data_source_reward.items():
-            metric_dict[f'val/test_score/{data_source}'] = np.mean(rewards)
-            mean_metrics += np.mean(rewards)
-        mean_metrics = mean_metrics / len(data_source_reward)
-        metric_dict[f'val/test_score/mean'] = mean_metrics
 
         data_source_metrics = {}
         for i in range(len(data_sources)):
             data_source = data_sources[i]
-            for key in token_level_scores.keys():
+            for key in all_eval_scores.keys():
                 if data_source not in data_source_metrics:
                     data_source_metrics[data_source] = {}
                 if key not in data_source_metrics[data_source]:
                     data_source_metrics[data_source][key] = []
-                data_source_metrics[data_source][key].append(token_level_scores[key][i].item())
+                data_source_metrics[data_source][key].append(all_eval_scores[key][i].item())
             for key in medata_dict.keys():
                 if data_source not in data_source_metrics:
                     data_source_metrics[data_source] = {}
@@ -854,11 +776,19 @@ class RayPPOTrainer(object):
         # currently, we only support validation using the reward_function.
         if self.val_reward_fn is not None and self.config.trainer.get('val_before_train', True):
             val_metrics = self._validate()
-            pprint(f'Initial validation metrics:')
+
+            print(f'Eval Answer EM:')
             for key in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle', 'mean']:
-                val_key = f'val/test_score/{key}'
+                val_key = f'val/answer_em/{key}'
                 val = val_metrics.get(val_key, None)
                 print(f'{val_key}: {val}')
+
+            print(f'Eval Answer F1:')
+            for key in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle', 'mean']:
+                val_key = f'val/answer_f1/{key}'
+                val = val_metrics.get(val_key, None)
+                print(f'{val_key}: {val}')
+
             logger.log(data=val_metrics, step=self.global_steps)
             if self.config.trainer.get('val_only', False):
                 return
@@ -983,14 +913,11 @@ class RayPPOTrainer(object):
 
                         # we combine with rule-based rm
                         reward_tensor = self.reward_fn(batch)
-                        batch.batch['token_level_scores'] = reward_tensor
-                        batch.batch['token_level_information_scores'] = self.reward_fn.get_subem(batch)
-                        batch.batch['token_level_answer_scores'] = self.reward_fn.get_answer_em(batch)
-                        batch.batch['token_level_information_reverse_rank'] = self.reward_fn.get_reverse_rank(batch)
-                        batch.batch['token_level_format_scores'] = self.reward_fn.get_format_scores(batch)
-
                         refine_reward_tensor = self.reward_fn.get_refine_subem(batch)
+                        batch.batch.update(self.reward_fn.get_additional_scores(batch))
+                        batch.batch['token_level_scores'] = reward_tensor
                         batch.batch['token_level_refine_scores'] = refine_reward_tensor
+
                         if self.config.actor_rollout_ref.actor.refine_lambda > 0:
                             reward_tensor += self.config.actor_rollout_ref.actor.refine_lambda * refine_reward_tensor
 

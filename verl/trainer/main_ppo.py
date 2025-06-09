@@ -23,6 +23,7 @@ from verl.trainer.ppo.ray_dapo_trainer import RayDAPOTrainer
 import re
 import numpy as np
 import json
+from collections import defaultdict
 
 def keep_till_last_refine(text: str) -> str:
     token = "</refine>"
@@ -30,6 +31,15 @@ def keep_till_last_refine(text: str) -> str:
     if pos == -1:
         return text
     return text[:pos + len(token)]
+
+LOG_FUNCS = {
+    'information_scores': qa_em.compute_information_score_subem,
+    'information_reverse_rank': qa_em.compute_information_reverse_rank,
+    'answer_em': qa_em.compute_score_em,
+    'answer_f1': qa_em.compute_score_f1,
+    'refine_scores': qa_em.compute_refine_score_subem,
+    'format_scores': qa_em.compute_score_format,
+}
 
 class RewardManager():
     """The reward manager.
@@ -72,10 +82,8 @@ class RewardManager():
             reward_tensor[i, valid_response_length - 1] = score
         return reward_tensor
 
-    def get_answer_em(self, data: DataProto):
-        reward_tensor = torch.zeros_like(data.batch['responses'], dtype=torch.float32)
-
-        already_print_data_sources = {}
+    def get_additional_scores(self, data: DataProto):
+        additional_scores = defaultdict(lambda: torch.zeros(len(data), dtype=torch.float32))
 
         for i in range(len(data)):
             data_item = data[i]  # DataProtoItem
@@ -96,116 +104,11 @@ class RewardManager():
             sequences_str = self.tokenizer.decode(sequences)
 
             ground_truth = data_item.non_tensor_batch['reward_model']['ground_truth']
-            data_source = data_item.non_tensor_batch['data_source']
-            compute_score_fn = qa_em.compute_score_em
 
-            score = compute_score_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=self.format_score, refine_score=0.0)
-
-            reward_tensor[i, valid_response_length - 1] = score
-
-            if data_source not in already_print_data_sources:
-                already_print_data_sources[data_source] = 0
-
-            if already_print_data_sources[data_source] < self.num_examine:
-                already_print_data_sources[data_source] += 1
-                if already_print_data_sources[data_source] ==1:
-                    print(sequences_str)
-                if self.log_path is not None:
-                    assert self.log_path.endswith('.jsonl')
-                    log_info = {
-                        'data_source': data_source,
-                        'ground_truth': ground_truth['target'].tolist()[0],
-                        'response': sequences_str,
-                        'score': score
-                    }
-                    with open(self.log_path, 'a+') as f:
-                        f.write(json.dumps(log_info) + '\n')
-        return reward_tensor
-
-    def get_subem(self, data: DataProto):
-        reward_tensor = torch.zeros_like(data.batch['responses'], dtype=torch.float32)
-
-        for i in range(len(data)):
-            data_item = data[i]  # DataProtoItem
-
-            prompt_ids = data_item.batch['prompts']
-
-            prompt_length = prompt_ids.shape[-1]
-
-            valid_prompt_length = data_item.batch['attention_mask'][:prompt_length].sum()
-            valid_prompt_ids = prompt_ids[-valid_prompt_length:]
-
-            response_ids = data_item.batch['responses']
-            valid_response_length = data_item.batch['attention_mask'][prompt_length:].sum()
-            valid_response_ids = response_ids[:valid_response_length]
-
-            # decode
-            sequences = torch.cat((valid_prompt_ids, valid_response_ids))
-            sequences_str = self.tokenizer.decode(sequences)
-
-            ground_truth = data_item.non_tensor_batch['reward_model']['ground_truth']
-            compute_score_fn = qa_em.compute_information_score_subem
-
-            score = compute_score_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=self.format_score)
-
-            reward_tensor[i, valid_response_length - 1] = score
-        return reward_tensor
-
-    def get_format_scores(self, data: DataProto):
-        reward_tensor = torch.zeros_like(data.batch['responses'], dtype=torch.float32)
-
-        for i in range(len(data)):
-            data_item = data[i]  # DataProtoItem
-
-            prompt_ids = data_item.batch['prompts']
-
-            prompt_length = prompt_ids.shape[-1]
-
-            valid_prompt_length = data_item.batch['attention_mask'][:prompt_length].sum()
-            valid_prompt_ids = prompt_ids[-valid_prompt_length:]
-
-            response_ids = data_item.batch['responses']
-            valid_response_length = data_item.batch['attention_mask'][prompt_length:].sum()
-            valid_response_ids = response_ids[:valid_response_length]
-
-            # decode
-            sequences = torch.cat((valid_prompt_ids, valid_response_ids))
-            sequences_str = self.tokenizer.decode(sequences)
-
-            ground_truth = data_item.non_tensor_batch['reward_model']['ground_truth']
-            score = qa_em.compute_score_format(solution_str=sequences_str, ground_truth=ground_truth)
-
-            reward_tensor[i, valid_response_length - 1] = score
-        return reward_tensor
-
-    def get_reverse_rank(self, data: DataProto):
-        reward_tensor = torch.zeros_like(data.batch['responses'], dtype=torch.float32)
-
-        for i in range(len(data)):
-            data_item = data[i]  # DataProtoItem
-
-            prompt_ids = data_item.batch['prompts']
-
-            prompt_length = prompt_ids.shape[-1]
-
-            valid_prompt_length = data_item.batch['attention_mask'][:prompt_length].sum()
-            valid_prompt_ids = prompt_ids[-valid_prompt_length:]
-
-            response_ids = data_item.batch['responses']
-            valid_response_length = data_item.batch['attention_mask'][prompt_length:].sum()
-            valid_response_ids = response_ids[:valid_response_length]
-
-            # decode
-            sequences = torch.cat((valid_prompt_ids, valid_response_ids))
-            sequences_str = self.tokenizer.decode(sequences)
-
-            ground_truth = data_item.non_tensor_batch['reward_model']['ground_truth']
-            compute_score_fn = qa_em.compute_information_reverse_rank
-
-            score = compute_score_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=self.format_score)
-
-            reward_tensor[i, valid_response_length - 1] = score
-        return reward_tensor
+            for key, compute_fn in LOG_FUNCS.items():
+                score = compute_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=0.0)
+                additional_scores[key][i] = score
+        return additional_scores
 
     def __call__(self, data: DataProto):
         """We will expand this function gradually based on the available datasets"""
@@ -243,13 +146,11 @@ class RewardManager():
             # select rm_score
             if self.reward_style.lower() == 'em':
                 compute_score_fn = qa_em.compute_score_em
-
-                score = compute_score_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=self.format_score, refine_score=self.refine_score)
             elif self.reward_style.lower() == 'f1':
                 compute_score_fn = qa_em.compute_score_f1
-                score = compute_score_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=self.format_score, refine_score=self.refine_score)
             else:
                 raise NotImplementedError
+            score = compute_score_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=self.format_score, refine_score=self.refine_score, do_print_frac=1024)
 
             reward_tensor[i, valid_response_length - 1] = score
 
