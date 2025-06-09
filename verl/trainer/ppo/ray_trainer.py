@@ -555,7 +555,7 @@ class RayPPOTrainer(object):
                     
                     # evaluate using reward_function
                     # for certain reward function (e.g. sandbox), the generation can overlap with reward
-                    eval_scores = self.reward_fn.get_additional_scores(test_batch)
+                    eval_scores = self.val_reward_fn.get_log_scores(test_batch, step=self.global_steps)
                     for key, value in eval_scores.items():
                         all_eval_scores[key].append(value)
                     for key, value in gen_key_map.items():
@@ -911,7 +911,7 @@ class RayPPOTrainer(object):
                         # we combine with rule-based rm
                         reward_tensor = self.reward_fn(batch)
                         refine_reward_tensor = self.reward_fn.get_refine_subem(batch)
-                        batch.batch.update(self.reward_fn.get_additional_scores(batch))
+                        batch.batch.update(self.reward_fn.get_log_scores(batch, self.global_steps))
                         batch.batch['token_level_scores'] = reward_tensor
                         batch.batch['token_level_refine_scores'] = refine_reward_tensor
 

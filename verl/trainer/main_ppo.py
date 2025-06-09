@@ -83,8 +83,9 @@ class RewardManager():
             reward_tensor[i, valid_response_length - 1] = score
         return reward_tensor
 
-    def get_additional_scores(self, data: DataProto):
+    def get_log_scores(self, data: DataProto, step: int = -1):
         additional_scores = defaultdict(lambda: torch.zeros(len(data), dtype=torch.float32))
+        already_print_data_sources = {}
 
         for i in range(len(data)):
             data_item = data[i]  # DataProtoItem
@@ -109,6 +110,29 @@ class RewardManager():
             for key, compute_fn in LOG_FUNCS.items():
                 score = compute_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=0.0)
                 additional_scores[key][i] = score
+            
+            scores_item = {key: additional_scores[key][i].item() for key in additional_scores.keys()}
+
+            data_source = data_item.non_tensor_batch['data_source']
+            if data_source not in already_print_data_sources:
+                already_print_data_sources[data_source] = 0
+
+            if already_print_data_sources[data_source] < self.num_examine:
+                already_print_data_sources[data_source] += 1
+                if already_print_data_sources[data_source] == 1:
+                    print(sequences_str)
+                if self.log_path is not None:
+                    assert self.log_path.endswith('.jsonl')
+                    log_info = {
+                        'step': step,
+                        'data_source': data_source,
+                        'scores': scores_item,
+                        'ground_truth': ground_truth['target'].tolist(),
+                        'response': sequences_str,
+                    }
+                    with open(self.log_path, 'a+') as f:
+                        f.write(json.dumps(log_info) + '\n')
+            
         return additional_scores
 
     def __call__(self, data: DataProto):
@@ -121,8 +145,6 @@ class RewardManager():
         reward_tensor = torch.zeros_like(data.batch['responses'], dtype=torch.float32)
 
         # all_scores = []
-
-        already_print_data_sources = {}
 
         for i in range(len(data)):
             data_item = data[i]  # DataProtoItem
@@ -154,25 +176,6 @@ class RewardManager():
             score = compute_score_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=self.format_score, refine_score=self.refine_score, do_print_frac=1024)
 
             reward_tensor[i, valid_response_length - 1] = score
-
-            data_source = data_item.non_tensor_batch['data_source']
-            if data_source not in already_print_data_sources:
-                already_print_data_sources[data_source] = 0
-
-            if already_print_data_sources[data_source] < self.num_examine:
-                already_print_data_sources[data_source] += 1
-                if already_print_data_sources[data_source] ==1:
-                    print(sequences_str)
-                if self.log_path is not None:
-                    assert self.log_path.endswith('.jsonl')
-                    log_info = {
-                        'data_source': data_source,
-                        'ground_truth': ground_truth['target'].tolist()[0],
-                        'response': sequences_str,
-                        'score': score
-                    }
-                    with open(self.log_path, 'a+') as f:
-                        f.write(json.dumps(log_info) + '\n')
 
         return reward_tensor
 
