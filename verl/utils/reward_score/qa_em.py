@@ -102,7 +102,7 @@ def em_check(prediction, golden_answers):
     return score
 
 
-def subem_check(prediction, golden_answers):
+def cover_em_check(prediction, golden_answers):
     if isinstance(golden_answers, str):
         golden_answers = [golden_answers]
     normalized_prediction = normalize_answer(prediction)
@@ -250,7 +250,7 @@ def compute_score_em(solution_str, ground_truth, method='strict', format_score=0
                 score += refine_score
             return score
 
-def compute_score_subem(solution_str, ground_truth, method='strict', format_score=0., score=1.):
+def compute_score_cem(solution_str, ground_truth, method='strict', format_score=0., score=1.):
     """The scoring function for substring exact match (EM).
 
     Args:
@@ -264,7 +264,7 @@ def compute_score_subem(solution_str, ground_truth, method='strict', format_scor
     if answer is None:
         return 0
     else:
-        if subem_check(answer, ground_truth['target']):
+        if cover_em_check(answer, ground_truth['target']):
             return score
         else:
             return format_score
@@ -287,7 +287,7 @@ def compute_information_score_subem(solution_str, ground_truth, method='strict',
     elif 'no' in ground_truth['target'] or 'yes' in ground_truth['target']:
         return 0.5
     else:
-        if subem_check(information, ground_truth['target']):
+        if cover_em_check(information, ground_truth['target']):
             return score
         else:
             return format_score
@@ -311,7 +311,7 @@ def compute_information_reverse_rank(solution_str, ground_truth, method='strict'
         return 0.5
     else:
         for idx, doc in enumerate(doc_list):
-            if subem_check(doc, ground_truth['target']):
+            if cover_em_check(doc, ground_truth['target']):
                 return score / float(idx + 1)
     return format_score
 
@@ -329,7 +329,7 @@ def compute_refine_score_subem(solution_str, ground_truth, method='strict', form
     if refined_info is None:
         return 0.0
     else:
-        if subem_check(refined_info, ground_truth['target']):
+        if cover_em_check(refined_info, ground_truth['target']):
             return score
         else:
             return format_score

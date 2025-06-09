@@ -37,6 +37,7 @@ LOG_FUNCS = {
     'information_reverse_rank': qa_em.compute_information_reverse_rank,
     'answer_em': qa_em.compute_score_em,
     'answer_f1': qa_em.compute_score_f1,
+    'answer_cem': qa_em.compute_score_cem,
     'refine_scores': qa_em.compute_refine_score_subem,
     'format_scores': qa_em.compute_score_format,
 }
