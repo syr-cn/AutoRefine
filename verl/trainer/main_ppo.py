@@ -25,12 +25,6 @@ import numpy as np
 import json
 from collections import defaultdict
 
-def keep_till_last_refine(text: str) -> str:
-    token = "</refine>"
-    pos = text.rfind(token)
-    if pos == -1:
-        return text
-    return text[:pos + len(token)]
 
 LOG_FUNCS = {
     'information_scores': qa_em.compute_information_score_subem,
@@ -74,16 +68,17 @@ class RewardManager():
             # decode
             sequences = torch.cat((valid_prompt_ids, valid_response_ids))
             sequences_str = self.tokenizer.decode(sequences)
+            responses_str = self.tokenizer.decode(valid_response_ids)
 
             ground_truth = data_item.non_tensor_batch['reward_model']['ground_truth']
             compute_score_fn = qa_em.compute_refine_score_subem
 
-            score = compute_score_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=self.format_score)
+            score = compute_score_fn(solution_str=sequences_str, responses_str=responses_str, ground_truth=ground_truth, format_score=self.format_score)
 
             reward_tensor[i, valid_response_length - 1] = score
         return reward_tensor
 
-    def get_log_scores(self, data: DataProto, step: int = -1):
+    def get_logging_scores(self, data: DataProto, step: int = -1):
         additional_scores = defaultdict(lambda: torch.zeros(len(data), dtype=torch.float32))
         already_print_data_sources = {}
 
@@ -104,11 +99,12 @@ class RewardManager():
             # decode
             sequences = torch.cat((valid_prompt_ids, valid_response_ids))
             sequences_str = self.tokenizer.decode(sequences)
+            responses_str = self.tokenizer.decode(valid_response_ids)
 
             ground_truth = data_item.non_tensor_batch['reward_model']['ground_truth']
 
             for key, compute_fn in LOG_FUNCS.items():
-                score = compute_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=0.0)
+                score = compute_fn(solution_str=sequences_str, responses_str=responses_str, ground_truth=ground_truth, format_score=0.0)
                 additional_scores[key][i] = score
             
             scores_item = {key: additional_scores[key][i].item() for key in additional_scores.keys()}
@@ -163,6 +159,7 @@ class RewardManager():
             # decode
             sequences = torch.cat((valid_prompt_ids, valid_response_ids))
             sequences_str = self.tokenizer.decode(sequences)
+            responses_str = self.tokenizer.decode(valid_response_ids)
 
             ground_truth = data_item.non_tensor_batch['reward_model']['ground_truth']
 
@@ -173,7 +170,7 @@ class RewardManager():
                 compute_score_fn = qa_em.compute_score_f1
             else:
                 raise NotImplementedError
-            score = compute_score_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=self.format_score, refine_score=self.refine_score, do_print_frac=1024)
+            score = compute_score_fn(solution_str=sequences_str, responses_str=responses_str, ground_truth=ground_truth, format_score=self.format_score, refine_score=self.refine_score, do_print_frac=1024)
 
             reward_tensor[i, valid_response_length - 1] = score
 

@@ -62,14 +62,11 @@ def compute_f1_scores(prediction: str, ground_truths: list):
             final_metric[k] = max(eval(k), final_metric[k])
     return final_metric
 
-def validate_format(text: str):
+def validate_format(prompt, response):
     """
     validate the template format
     return: (is valid)
     """
-    # extract all assistant responses
-    assert '<|im_start|>assistant' in text
-    prompt, response = text.split("<|im_start|>assistant", 1)
     if '<refine>' in prompt:
         token_list = ['think', 'search', 'refine', 'answer']
     else:
@@ -114,10 +111,10 @@ def cover_em_check(prediction, golden_answers):
             break
     return score
 
-def extract_information(solution_str):
+def extract_information(responses_str):
     """Extract and concatenate information from <documents> tags, skipping the first."""
     info_pattern = r'<documents>(.*?)</documents>'
-    matches = re.findall(info_pattern, solution_str, re.DOTALL)
+    matches = re.findall(info_pattern, responses_str, re.DOTALL)
     
     if len(matches) <= 1:
         return None
@@ -126,21 +123,19 @@ def extract_information(solution_str):
     combined_info = ' '.join(matches[1:]).strip()
     return combined_info
 
-def extract_information_list(solution_str):
+def extract_information_list(responses_str):
     """Extract and concatenate information from <documents> tags, skipping the first."""
     info_pattern = r'<documents>(.*?)</documents>'
-    matches = re.findall(info_pattern, solution_str, re.DOTALL)
+    matches = re.findall(info_pattern, responses_str, re.DOTALL)
     
     if len(matches) <= 1:
         return None
     matches = matches[1:]
     return matches
 
-def extract_refine(solution_str):
-    assert '<|im_start|>assistant' in solution_str
-    solution_str = solution_str.split('<|im_start|>assistant')[1]
+def extract_refine(responses_str):
     info_pattern = r'<refine>(.*?)</refine>'
-    matches = re.findall(info_pattern, solution_str, re.DOTALL)
+    matches = re.findall(info_pattern, responses_str, re.DOTALL)
     
     if len(matches) == 0:
         return None
@@ -149,44 +144,24 @@ def extract_refine(solution_str):
     combined_info = ' '.join(matches).strip()
     return combined_info
 
-
-def extract_solution(solution_str):
-    """Extract the equation from the solution string."""
-    # Remove everything before the first "Assistant:"
-    # if "Assistant:" in solution_str:
-    #     solution_str = solution_str.split("Assistant:", 1)[1]
-    # elif "<|im_start|>assistant" in solution_str:
-    #     solution_str = solution_str.split("<|im_start|>assistant", 1)[1]
-    # else:
-    #     return None
-    # solution_str = solution_str.split('\n')[-1]
-
+def extract_solution(responses_str):
     answer_pattern = r'<answer>(.*?)</answer>'
-    match = re.finditer(answer_pattern, solution_str, re.DOTALL)
+    match = re.finditer(answer_pattern, responses_str, re.DOTALL)
     matches = list(match)
     
     # If there are 0 or exactly 1 matches, return None
-    if len(matches) <= 1:
+    if len(matches) <= 0:
         return None
     
     # If there are 2 or more matches, return the last one
     return matches[-1].group(1).strip()
 
-def compute_score_format(solution_str, ground_truth, format_score=0.0):
-    format_validity = validate_format(solution_str)
+def compute_score_format(solution_str, responses_str, ground_truth, format_score=0.0):
+    format_validity = validate_format(solution_str, responses_str)
     return format_validity
 
-def compute_score_f1(solution_str, ground_truth, format_score=0.0, refine_score=0.0, do_print_frac=-1):
-    """The scoring function for exact match (EM).
-
-    Args:
-        solution_str: the solution text
-        ground_truth: the ground truth
-        method: the method to extract the solution, choices are 'strict' and 'flexible'
-        format_score: the score for the format
-        score: the score for the correct answer
-    """
-    answer = extract_solution(solution_str=solution_str)
+def compute_score_f1(solution_str, responses_str, ground_truth, format_score=0.0, refine_score=0.0, do_print_frac=-1):
+    answer = extract_solution(responses_str)
     do_print = random.randint(1, do_print_frac) == 1 if do_print_frac > 0 else False
     
     if do_print:
@@ -200,8 +175,8 @@ def compute_score_f1(solution_str, ground_truth, format_score=0.0, refine_score=
         return 0
     else:
         f1_score = compute_f1_scores(answer, ground_truth['target'])['f1']
-        format_validity = validate_format(solution_str)
-        refine_subem = compute_refine_score_subem(solution_str, ground_truth, format_score=False, score=True)
+        format_validity = validate_format(solution_str, responses_str)
+        refine_subem = compute_refine_score_subem(solution_str, responses_str, ground_truth, format_score=False, score=True)
 
         if f1_score > 0:
             return f1_score
@@ -213,17 +188,8 @@ def compute_score_f1(solution_str, ground_truth, format_score=0.0, refine_score=
                 score += refine_score
             return score
 
-def compute_score_em(solution_str, ground_truth, method='strict', format_score=0., score=1., refine_score=0.0, do_print_frac=-1):
-    """The scoring function for exact match (EM).
-
-    Args:
-        solution_str: the solution text
-        ground_truth: the ground truth
-        method: the method to extract the solution, choices are 'strict' and 'flexible'
-        format_score: the score for the format
-        score: the score for the correct answer
-    """
-    answer = extract_solution(solution_str=solution_str)
+def compute_score_em(solution_str, responses_str, ground_truth, format_score=0., score=1., refine_score=0.0, do_print_frac=-1):
+    answer = extract_solution(responses_str)
     do_print = random.randint(1, do_print_frac) == 1 if do_print_frac > 0 else False
     
     if do_print:
@@ -237,8 +203,8 @@ def compute_score_em(solution_str, ground_truth, method='strict', format_score=0
         return 0
     else:
         em_score = em_check(answer, ground_truth['target'])
-        format_validity = validate_format(solution_str)
-        refine_subem = compute_refine_score_subem(solution_str, ground_truth, format_score=False, score=True)
+        format_validity = validate_format(solution_str, responses_str)
+        refine_subem = compute_refine_score_subem(solution_str, responses_str, ground_truth, format_score=False, score=True)
 
         if em_score > 0:
             return em_score
@@ -250,7 +216,7 @@ def compute_score_em(solution_str, ground_truth, method='strict', format_score=0
                 score += refine_score
             return score
 
-def compute_score_cem(solution_str, ground_truth, method='strict', format_score=0., score=1.):
+def compute_score_cem(solution_str, responses_str, ground_truth, format_score=0., score=1.):
     """The scoring function for substring exact match (EM).
 
     Args:
@@ -260,7 +226,7 @@ def compute_score_cem(solution_str, ground_truth, method='strict', format_score=
         format_score: the score for the format
         score: the score for the correct answer
     """
-    answer = extract_solution(solution_str=solution_str)
+    answer = extract_solution(responses_str)
     if answer is None:
         return 0
     else:
@@ -270,7 +236,7 @@ def compute_score_cem(solution_str, ground_truth, method='strict', format_score=
             return format_score
 
 
-def compute_information_score_subem(solution_str, ground_truth, method='strict', format_score=0., score=1.):
+def compute_information_score_subem(solution_str, responses_str, ground_truth, format_score=0., score=1.):
     """The scoring function for substring exact match (EM).
 
     Args:
@@ -280,7 +246,7 @@ def compute_information_score_subem(solution_str, ground_truth, method='strict',
         format_score: the score for the format
         score: the score for the correct answer
     """
-    information = extract_information(solution_str=solution_str)
+    information = extract_information(responses_str)
     
     if information is None:
         return 0.0
@@ -293,7 +259,7 @@ def compute_information_score_subem(solution_str, ground_truth, method='strict',
             return format_score
 
 
-def compute_information_reverse_rank(solution_str, ground_truth, method='strict', format_score=0., score=1.):
+def compute_information_reverse_rank(solution_str, responses_str, ground_truth, format_score=0., score=1.):
     """The scoring function for substring exact match (EM).
 
     Args:
@@ -303,7 +269,7 @@ def compute_information_reverse_rank(solution_str, ground_truth, method='strict'
         format_score: the score for the format
         score: the score for the correct answer
     """
-    doc_list = extract_information_list(solution_str=solution_str)
+    doc_list = extract_information_list(responses_str)
     
     if doc_list is None:
         return 0.0
@@ -315,7 +281,7 @@ def compute_information_reverse_rank(solution_str, ground_truth, method='strict'
                 return score / float(idx + 1)
     return format_score
 
-def compute_refine_score_subem(solution_str, ground_truth, method='strict', format_score=0., score=1.):
+def compute_refine_score_subem(solution_str, responses_str, ground_truth, method='strict', format_score=0., score=1.):
     """The scoring function for substring exact match (EM).
 
     Args:
@@ -325,7 +291,7 @@ def compute_refine_score_subem(solution_str, ground_truth, method='strict', form
         format_score: the score for the format
         score: the score for the correct answer
     """
-    refined_info = extract_refine(solution_str=solution_str)
+    refined_info = extract_refine(responses_str)
     if refined_info is None:
         return 0.0
     else:
