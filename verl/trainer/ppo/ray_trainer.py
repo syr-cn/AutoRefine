@@ -220,6 +220,7 @@ def compute_data_metrics(batch, use_critic=True):
         'critic/reverse_rank_scores': batch.batch['information_reverse_rank'],
         'critic/answer_em': batch.batch['answer_em'],
         'critic/answer_f1': batch.batch['answer_f1'],
+        'critic/answer_cem': batch.batch['answer_cem'],
         'critic/refine_scores': batch.batch['refine_scores'],
         'critic/format_scores': batch.batch['format_scores'],
         'response_length': response_length,
