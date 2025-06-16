@@ -168,9 +168,11 @@ class RewardManager():
                 compute_score_fn = qa_em.compute_score_em
             elif self.reward_style.lower() == 'f1':
                 compute_score_fn = qa_em.compute_score_f1
+            elif self.reward_style.lower() == 'cem':
+                compute_score_fn = qa_em.compute_score_cem
             else:
                 raise NotImplementedError
-            score = compute_score_fn(solution_str=sequences_str, responses_str=responses_str, ground_truth=ground_truth, format_score=self.format_score, refine_score=self.refine_score, do_print_frac=1024)
+            score = qa_em.compute_reward(solution_str=sequences_str, responses_str=responses_str, ground_truth=ground_truth, score_func=compute_score_fn, format_score=self.format_score, refine_score=self.refine_score, do_print_frac=1024)
 
             reward_tensor[i, valid_response_length - 1] = score
 

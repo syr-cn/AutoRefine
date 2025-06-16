@@ -160,7 +160,7 @@ def compute_score_format(solution_str, responses_str, ground_truth, format_score
     format_validity = validate_format(solution_str, responses_str)
     return format_validity
 
-def compute_score_f1(solution_str, responses_str, ground_truth, format_score=0.0, refine_score=0.0, do_print_frac=-1):
+def compute_reward(solution_str, responses_str, ground_truth, format_score=0., score=1., refine_score=0.0, do_print_frac=-1, score_func=em_check):
     answer = extract_solution(responses_str)
     do_print = random.randint(1, do_print_frac) == 1 if do_print_frac > 0 else False
     
@@ -174,12 +174,12 @@ def compute_score_f1(solution_str, responses_str, ground_truth, format_score=0.0
     if answer is None:
         return 0
     else:
-        f1_score = compute_f1_scores(answer, ground_truth['target'])['f1']
+        answer_score = score_func(answer, ground_truth['target'])
         format_validity = validate_format(solution_str, responses_str)
         refine_subem = compute_refine_score_subem(solution_str, responses_str, ground_truth, format_score=False, score=True)
 
-        if f1_score > 0:
-            return f1_score
+        if answer_score > 0:
+            return answer_score
         else:
             score = 0.0
             if format_validity:
@@ -188,44 +188,29 @@ def compute_score_f1(solution_str, responses_str, ground_truth, format_score=0.0
                 score += refine_score
             return score
 
-def compute_score_em(solution_str, responses_str, ground_truth, format_score=0., score=1., refine_score=0.0, do_print_frac=-1):
+def compute_score_em(solution_str, responses_str, ground_truth, format_score=0., score=1.):
     answer = extract_solution(responses_str)
-    do_print = random.randint(1, do_print_frac) == 1 if do_print_frac > 0 else False
-    
-    if do_print:
-        print(f"--------------Begin Case--------------")
-        print(f"Golden answers: {ground_truth['target']}")
-        print(f"Extracted answer: {answer}")
-        print(f"Solution string: {solution_str}")
-        print(f"--------------End Case--------------")
-
     if answer is None:
         return 0
     else:
-        em_score = em_check(answer, ground_truth['target'])
-        format_validity = validate_format(solution_str, responses_str)
-        refine_subem = compute_refine_score_subem(solution_str, responses_str, ground_truth, format_score=False, score=True)
-
-        if em_score > 0:
-            return em_score
-        else:
-            score = 0.0
-            if format_validity:
-                score += format_score
-            if refine_subem > 0:
-                score += refine_score
+        if em_check(answer, ground_truth['target']):
             return score
+        else:
+            return format_score
+
+
+def compute_score_f1(solution_str, responses_str, ground_truth, format_score=0., score=1.):
+    answer = extract_solution(responses_str)
+    if answer is None:
+        return 0
+    else:
+        if compute_f1_scores(answer, ground_truth['target']):
+            return score
+        else:
+            return format_score
+
 
 def compute_score_cem(solution_str, responses_str, ground_truth, format_score=0., score=1.):
-    """The scoring function for substring exact match (EM).
-
-    Args:
-        solution_str: the solution text
-        ground_truth: the ground truth
-        method: the method to extract the solution, choices are 'strict' and 'flexible'
-        format_score: the score for the format
-        score: the score for the correct answer
-    """
     answer = extract_solution(responses_str)
     if answer is None:
         return 0
@@ -237,15 +222,6 @@ def compute_score_cem(solution_str, responses_str, ground_truth, format_score=0.
 
 
 def compute_information_score_subem(solution_str, responses_str, ground_truth, format_score=0., score=1.):
-    """The scoring function for substring exact match (EM).
-
-    Args:
-        solution_str: the solution text
-        ground_truth: the ground truth
-        method: the method to extract the solution, choices are 'strict' and 'flexible'
-        format_score: the score for the format
-        score: the score for the correct answer
-    """
     information = extract_information(responses_str)
     
     if information is None:
@@ -260,15 +236,6 @@ def compute_information_score_subem(solution_str, responses_str, ground_truth, f
 
 
 def compute_information_reverse_rank(solution_str, responses_str, ground_truth, format_score=0., score=1.):
-    """The scoring function for substring exact match (EM).
-
-    Args:
-        solution_str: the solution text
-        ground_truth: the ground truth
-        method: the method to extract the solution, choices are 'strict' and 'flexible'
-        format_score: the score for the format
-        score: the score for the correct answer
-    """
     doc_list = extract_information_list(responses_str)
     
     if doc_list is None:
@@ -282,15 +249,6 @@ def compute_information_reverse_rank(solution_str, responses_str, ground_truth, 
     return format_score
 
 def compute_refine_score_subem(solution_str, responses_str, ground_truth, method='strict', format_score=0., score=1.):
-    """The scoring function for substring exact match (EM).
-
-    Args:
-        solution_str: the solution text
-        ground_truth: the ground truth
-        method: the method to extract the solution, choices are 'strict' and 'flexible'
-        format_score: the score for the format
-        score: the score for the correct answer
-    """
     refined_info = extract_refine(responses_str)
     if refined_info is None:
         return 0.0
