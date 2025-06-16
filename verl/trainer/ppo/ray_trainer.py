@@ -216,7 +216,7 @@ def compute_data_metrics(batch, use_critic=True):
         'critic/advantages': valid_adv,
         'critic/returns': valid_returns,
         'critic/values': valid_values if use_critic else None,
-        'critic/info_score': batch.batch['information_scores'],
+        'critic/info_scores': batch.batch['information_scores'],
         'critic/reverse_rank_scores': batch.batch['information_reverse_rank'],
         'critic/answer_em': batch.batch['answer_em'],
         'critic/answer_f1': batch.batch['answer_f1'],
@@ -572,6 +572,10 @@ class RayPPOTrainer(object):
             test_scores = all_eval_scores['answer_em']
         elif self.config.reward_model.reward_style.lower() == 'f1':
             test_scores = all_eval_scores['answer_f1']
+        elif self.config.reward_model.reward_style.lower() == 'cem':
+            test_scores = all_eval_scores['answer_cem']
+        else:
+            raise NotImplementedError
         all_eval_scores['test_score'] = test_scores * 100.0
         for key in medata_dict.keys():
             assert len(medata_dict[key]) == len(data_sources), f'{key} length mismatch, {len(medata_dict[key])} vs {len(data_sources)}'

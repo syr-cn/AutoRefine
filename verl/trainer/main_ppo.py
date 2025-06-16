@@ -165,11 +165,11 @@ class RewardManager():
 
             # select rm_score
             if self.reward_style.lower() == 'em':
-                compute_score_fn = qa_em.compute_score_em
+                compute_score_fn = qa_em.em_check
             elif self.reward_style.lower() == 'f1':
-                compute_score_fn = qa_em.compute_score_f1
+                compute_score_fn = qa_em.compute_f1_scores
             elif self.reward_style.lower() == 'cem':
-                compute_score_fn = qa_em.compute_score_cem
+                compute_score_fn = qa_em.cover_em_check
             else:
                 raise NotImplementedError
             score = qa_em.compute_reward(solution_str=sequences_str, responses_str=responses_str, ground_truth=ground_truth, score_func=compute_score_fn, format_score=self.format_score, refine_score=self.refine_score, do_print_frac=1024)
