@@ -60,7 +60,7 @@ def compute_f1_scores(prediction: str, ground_truths: list):
         f1 = (2 * precision * recall) / (precision + recall)
         for k in ["f1", "precision", "recall"]:
             final_metric[k] = max(eval(k), final_metric[k])
-    return final_metric
+    return final_metric['f1']
 
 def validate_format(prompt, response):
     """
@@ -156,7 +156,7 @@ def extract_solution(responses_str):
     # If there are 2 or more matches, return the last one
     return matches[-1].group(1).strip()
 
-def compute_score_format(solution_str, responses_str, ground_truth, format_score=0.0):
+def compute_score_format(solution_str, responses_str):
     format_validity = validate_format(solution_str, responses_str)
     return format_validity
 
@@ -176,7 +176,7 @@ def compute_reward(solution_str, responses_str, ground_truth, format_score=0., s
     else:
         answer_score = score_func(answer, ground_truth['target'])
         format_validity = validate_format(solution_str, responses_str)
-        refine_subem = compute_refine_score_subem(solution_str, responses_str, ground_truth, format_score=False, score=True)
+        refine_subem = compute_refine_score_subem(responses_str, ground_truth)
 
         if answer_score > 0:
             return answer_score
@@ -188,40 +188,30 @@ def compute_reward(solution_str, responses_str, ground_truth, format_score=0., s
                 score += refine_score
             return score
 
-def compute_score_em(solution_str, responses_str, ground_truth, format_score=0., score=1.):
+def compute_score_em(responses_str, ground_truth):
     answer = extract_solution(responses_str)
     if answer is None:
         return 0
     else:
-        if em_check(answer, ground_truth['target']):
-            return score
-        else:
-            return format_score
+        return em_check(answer, ground_truth['target'])
 
-
-def compute_score_f1(solution_str, responses_str, ground_truth, format_score=0., score=1.):
+def compute_score_f1(responses_str, ground_truth):
     answer = extract_solution(responses_str)
     if answer is None:
         return 0
     else:
-        if compute_f1_scores(answer, ground_truth['target']):
-            return score
-        else:
-            return format_score
+        return compute_f1_scores(answer, ground_truth['target'])
 
 
-def compute_score_cem(solution_str, responses_str, ground_truth, format_score=0., score=1.):
+def compute_score_cem(responses_str, ground_truth):
     answer = extract_solution(responses_str)
     if answer is None:
         return 0
     else:
-        if cover_em_check(answer, ground_truth['target']):
-            return score
-        else:
-            return format_score
+        return cover_em_check(answer, ground_truth['target'])
 
 
-def compute_information_score_subem(solution_str, responses_str, ground_truth, format_score=0., score=1.):
+def compute_information_score_subem(responses_str, ground_truth):
     information = extract_information(responses_str)
     
     if information is None:
@@ -229,14 +219,11 @@ def compute_information_score_subem(solution_str, responses_str, ground_truth, f
     elif 'no' in ground_truth['target'] or 'yes' in ground_truth['target']:
         return 0.5
     else:
-        if cover_em_check(information, ground_truth['target']):
-            return score
-        else:
-            return format_score
+        return cover_em_check(information, ground_truth['target'])
 
-
-def compute_information_reverse_rank(solution_str, responses_str, ground_truth, format_score=0., score=1.):
+def compute_information_reverse_rank(responses_str, ground_truth):
     doc_list = extract_information_list(responses_str)
+    info_score = 0.0
     
     if doc_list is None:
         return 0.0
@@ -245,15 +232,12 @@ def compute_information_reverse_rank(solution_str, responses_str, ground_truth, 
     else:
         for idx, doc in enumerate(doc_list):
             if cover_em_check(doc, ground_truth['target']):
-                return score / float(idx + 1)
-    return format_score
+                info_score += 1 / float(idx + 1)
+    return info_score
 
-def compute_refine_score_subem(solution_str, responses_str, ground_truth, method='strict', format_score=0., score=1.):
+def compute_refine_score_subem(responses_str, ground_truth):
     refined_info = extract_refine(responses_str)
     if refined_info is None:
         return 0.0
     else:
-        if cover_em_check(refined_info, ground_truth['target']):
-            return score
-        else:
-            return format_score
+        return cover_em_check(refined_info, ground_truth['target'])
