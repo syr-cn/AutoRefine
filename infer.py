@@ -1,27 +1,21 @@
 import transformers
 import torch
 import requests
+import re
 
-question = "Who was born first out of Cameron Mitchell (Singer) and Léopold De Saussure?" # Ground Truth: "Léopold De Saussure"
-# question = "The Clavivox was invented by an American composer who was born Harry Warnow in what year?" # Ground Truth: "1908"
-# question = "Which movie did Disney produce first, The Many Adventures of Winnie the Pooh or Ride a Wild Pony?" # Ground Truth: "Ride a Wild Pony"
-# question = "Who is the sibling of the author of Kapalkundala?" # Ground Truth: "Sanjib Chandra" or "Sanjib Chandra Chattopadhyay"
+question_list = [
+    "Who was born first out of Cameron Mitchell (Singer) and Léopold De Saussure?", # Ground Truth: "Léopold De Saussure"
+    "The Clavivox was invented by an American composer who was born Harry Warnow in what year?", # Ground Truth: "1908"
+    "Which movie did Disney produce first, The Many Adventures of Winnie the Pooh or Ride a Wild Pony?", # Ground Truth: "Ride a Wild Pony"
+    "Who is the sibling of the author of Kapalkundala?", # Ground Truth: "Sanjib Chandra" or "Sanjib Chandra Chattopadhyay"
+]
 
 # Model ID and device setup
 model_id = "yrshi/AutoRefine-Qwen2.5-3B-Base"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-question = question.strip()
 curr_eos = [151645, 151643] # for Qwen2.5 series models
 curr_search_template = '\n\n{output_text}<documents>{search_results}</documents>\n\n'
-
-# Prepare the message
-prompt = f"""You are a helpful assistant excel at answering questions with multi-turn search engine calling. \
-To answer questions, you must first reason through the available information using <think> and </think>. \
-If you identify missing knowledge, you may issue a search request using <search> query </search> at any time. The retrieval system will provide you with the three most relevant documents enclosed in <documents> and </documents>. \
-After each search, you need to summarize and refine the existing documents in <refine> and </refine>. \
-You may send multiple search requests if needed. \
-Once you have sufficient information, provide a concise final answer using <answer> and </answer>. For example, <answer> Donald Trump </answer>. Question: {question}\n"""
 
 # Initialize the tokenizer and model
 tokenizer = transformers.AutoTokenizer.from_pretrained(model_id)
@@ -83,45 +77,74 @@ def search(query: str):
 target_sequences = ["</search>", " </search>", "</search>\n", " </search>\n", "</search>\n\n", " </search>\n\n"]
 stopping_criteria = transformers.StoppingCriteriaList([StopOnSequence(target_sequences, tokenizer)])
 
-cnt = 0
 
-if tokenizer.chat_template:
-    prompt = tokenizer.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True, tokenize=False)
-
-print('\n\n################# [Start Reasoning + Searching] ##################\n\n')
-print(prompt)
-# Encode the chat-formatted prompt and move it to the correct device
-while True:
-    input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
-    attention_mask = torch.ones_like(input_ids)
+def run_search(question):
+    question = question.strip()
+    cnt = 0
+    trajectory = []
     
-    # Generate text with the stopping criteria
-    outputs = model.generate(
-        input_ids,
-        attention_mask=attention_mask,
-        max_new_tokens=1024,
-        stopping_criteria=stopping_criteria,
-        pad_token_id=tokenizer.eos_token_id,
-        do_sample=True,
-        temperature=0.7
-    )
+    # Prepare the message
+    prompt = f"""You are a helpful assistant excel at answering questions with multi-turn search engine calling. \
+    To answer questions, you must first reason through the available information using <think> and </think>. \
+    If you identify missing knowledge, you may issue a search request using <search> query </search> at any time. The retrieval system will provide you with the three most relevant documents enclosed in <documents> and </documents>. \
+    After each search, you need to summarize and refine the existing documents in <refine> and </refine>. \
+    You may send multiple search requests if needed. \
+    Once you have sufficient information, provide a concise final answer using <answer> and </answer>. For example, <answer> Donald Trump </answer>. Question: {question}\n"""
 
-    if outputs[0][-1].item() in curr_eos:
+
+    if tokenizer.chat_template:
+        prompt = tokenizer.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True, tokenize=False)
+
+    print(prompt)
+    # Encode the chat-formatted prompt and move it to the correct device
+    while True:
+        input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
+        attention_mask = torch.ones_like(input_ids)
+        
+        # Generate text with the stopping criteria
+        outputs = model.generate(
+            input_ids,
+            attention_mask=attention_mask,
+            max_new_tokens=1024,
+            stopping_criteria=stopping_criteria,
+            pad_token_id=tokenizer.eos_token_id,
+            do_sample=True,
+            temperature=0.7
+        )
+
+        if outputs[0][-1].item() in curr_eos:
+            generated_tokens = outputs[0][input_ids.shape[1]:]
+            output_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
+            trajectory.append(output_text)
+            print(output_text)
+            break
+
         generated_tokens = outputs[0][input_ids.shape[1]:]
         output_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
-        print(output_text)
-        break
+        
+        query_text = get_query(tokenizer.decode(outputs[0], skip_special_tokens=True))
+        if query_text:
+            search_results = search(query_text)
+        else:
+            search_results = ''
 
-    generated_tokens = outputs[0][input_ids.shape[1]:]
-    output_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
-    
-    query_text = get_query(tokenizer.decode(outputs[0], skip_special_tokens=True))
-    if query_text:
-        search_results = search(query_text)
+        search_text = curr_search_template.format(output_text=output_text, search_results=search_results)
+        prompt += search_text
+        cnt += 1
+        print(search_text)
+        trajectory.append(search_text)
+    print(f"Total iterations: {cnt}")
+    answer_pattern = re.compile(r"<answer>(.*?)</answer>", re.DOTALL)
+    answer_match = answer_pattern.search(trajectory[-1])
+    if answer_match:
+        final_answer = answer_match.group(1).strip()
+        print(f"Final answer found: {final_answer}")
     else:
-        search_results = ''
+        print("No final answer found in the output.")
+        final_answer = "No final answer found."
+    return ''.join([text.strip() for text in trajectory]), final_answer
 
-    search_text = curr_search_template.format(output_text=output_text, search_results=search_results)
-    prompt += search_text
-    cnt += 1
-    print(search_text)
+if __name__ == "__main__":
+    output_text, final_answer = run_search(question_list[0])
+    print(f"Output trajectory: {output_text}")
+    print(f"Final answer: {final_answer}")
