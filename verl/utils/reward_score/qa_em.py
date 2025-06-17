@@ -156,8 +156,8 @@ def extract_solution(responses_str):
     # If there are 2 or more matches, return the last one
     return matches[-1].group(1).strip()
 
-def compute_score_format(solution_str, responses_str):
-    format_validity = validate_format(solution_str, responses_str)
+def compute_score_format(responses_str, ground_truth):
+    format_validity = validate_format(responses_str, responses_str)
     return format_validity
 
 def compute_reward(solution_str, responses_str, ground_truth, format_score=0., score=1., refine_score=0.0, do_print_frac=-1, score_func=em_check):
