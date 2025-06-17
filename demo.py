@@ -6,7 +6,9 @@ def gradio_answer(question: str) -> str:
     try:
         # Call the core inference function, passing the pre-loaded assets
         trajectory, answer = run_search(question)
-        return trajectory
+        answer_string = f"Final answer: {answer.strip()}"
+        answer_string += f"\n\n====== Trajectory of reasoning steps ======\n{trajectory.strip()}"
+        return answer_string
     except Exception as e:
         # Basic error handling for the Gradio interface
         return f"An error occurred: {e}. Please check the console for more details."
@@ -29,7 +31,8 @@ iface = gr.Interface(
     examples=question_list, # Use the list of example questions
     live=False, # Set to True if you want real-time updates as user types
     allow_flagging="never", # Disable flagging functionality
-    theme=gr.themes.Soft() # Apply a clean theme
+    theme=gr.themes.Soft(), # Apply a clean theme
+    cache_examples=True, # Cache the examples for faster loading
 )
 
 iface.launch(share=True)
