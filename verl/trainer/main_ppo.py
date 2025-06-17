@@ -71,9 +71,8 @@ class RewardManager():
             responses_str = self.tokenizer.decode(valid_response_ids)
 
             ground_truth = data_item.non_tensor_batch['reward_model']['ground_truth']
-            compute_score_fn = qa_em.compute_refine_score_subem
 
-            score = compute_score_fn(solution_str=sequences_str, responses_str=responses_str, ground_truth=ground_truth, format_score=self.format_score)
+            score = qa_em.compute_refine_score_subem(responses_str=responses_str, ground_truth=ground_truth)
 
             reward_tensor[i, valid_response_length - 1] = score
         return reward_tensor
