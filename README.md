@@ -56,6 +56,32 @@ conda install -c pytorch -c nvidia faiss-gpu=1.8.0
 pip install uvicorn fastapi
 ```
 
+## 💫Quick Start
+
+To quickly test the model, you can run the demo script:
+
+1. Start the retrieval server:
+```bash
+conda activate faiss_env
+bash retrieval_launch.sh
+```
+Please refer to the [Retrieval Corpus](#retrieval-corpus) section for the preparation of the retrieval corpus.
+This won't take long if your internet connection is good.
+
+2. Run the demo script:
+```bash
+conda activate autorefine
+python demo.py
+```
+This will start a Gradio interface where you can input questions and see the model's responses.
+
+If you prefer a local inference without the Gradio interface, you can directly run the inference script:
+```bash
+conda activate autorefine
+python infer.py
+```
+This will print the model's response to the console. You may modify the `infer.py` script to change the input question or adjust the model parameters.
+
 ## 📂Data Preparation
 
 ### Retrieval Corpus
