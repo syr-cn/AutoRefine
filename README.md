@@ -134,6 +134,28 @@ conda activate autorefine
 bash cmd/eval.sh
 ```
 
+The metrics will be print to the terminal, and generated responses will be saved to `log/val/$EXPERIMENT_NAME` by default.
+
+The LLM-as-judge inference can be run via `cmd/llm_judge.py`.
+To run this script, you may first install the langchain dependencies:
+```bash
+pip install openai langchain tqdm langchain-community langchain-openai
+```
+
+Then, you have to first config the API key and result path settings in the script:
+```python
+INPUT_PATH = "PATH-TO-RESULT"
+OUTPUT_PATH = INPUT_PATH.replace(".jsonl", "-score.jsonl")
+MODEL_NAME = "gpt-4o-mini"
+API_VERSION = '2024-03-01-preview'
+MAX_WORKERS = 2
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_END_POINT = os.getenv("OPENAI_API_ENDPOINT")
+```
+
+Then running `python cmd/llm_judge.py` under the `autorefine` env will automatically do the evaluation.
+
+
 ## 🙏Acknowledgements
 
 This project is built upon the foundational work of [VeRL](https://github.com/volcengine/verl) and [Search-R1](https://github.com/PeterGriffinJin/Search-R1).
