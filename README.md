@@ -2,6 +2,7 @@
 
 ## 🔥News
 
+- Support quick start of gradio demo or quick inference. Refer to [Quick Start](#quick-start).
 - Homepage is available at \[[Here](https://syr-cn.github.io/AutoRefine/)\]
 - Paper is available on \[[Arxiv](https://www.arxiv.org/pdf/2505.11277)\]
 - Checkpoints are released at \[[🤗HuggingFace](https://huggingface.co/yrshi/AutoRefine-Qwen2.5-3B-Base)\].
