@@ -139,6 +139,8 @@ bash cmd/eval.sh
 This project is built upon the foundational work of [VeRL](https://github.com/volcengine/verl) and [Search-R1](https://github.com/PeterGriffinJin/Search-R1).
 We sincerely thank the authors of these projects for their valuable contributions, which have significantly supported and inspired our work.
 
+Thanks for the mention by Search-R1 at [Here](https://github.com/PeterGriffinJin/Search-R1?tab=readme-ov-file#awesome-work-powered-or-inspired-by-search-r1).
+
 ## 🎓Citations
 
 ```latex
