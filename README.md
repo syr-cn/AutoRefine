@@ -2,6 +2,7 @@
 
 ## 🔥News
 
+- Update results of additional model size (7B) under more metrics (F1, Cover EM).
 - Support quick start of gradio demo or quick inference. Refer to [Quick Start](#quick-start).
 - Homepage is available at \[[Here](https://syr-cn.github.io/AutoRefine/)\]
 - Paper is available on \[[Arxiv](https://www.arxiv.org/pdf/2505.11277)\]
@@ -19,6 +20,8 @@ AutoRefine is an RL post-training framework that adopts a new "search-and-refine
 ![Innovations](assets/innovations.jpg)
 
 ![Main Results](assets/main_results.jpg)
+
+![More Metrics](assets/more_metrics.jpg)
 
 
 ## 🛠️Installation
