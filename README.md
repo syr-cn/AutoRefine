@@ -1,7 +1,7 @@
 # AutoRefine
 
 ## 🔥News
-
+- This work got accepted by [NeurIPS 2025 (Poster)](https://neurips.cc/virtual/2025/poster/115806) 🎉🎉🎉
 - Update results of additional model size (7B) under more metrics (F1, Cover EM).
 - Support quick start of gradio demo or quick inference. Refer to [Quick Start](#quick-start).
 - Homepage is available at \[[Here](https://syr-cn.github.io/AutoRefine/)\]
@@ -9,7 +9,7 @@
 - Checkpoints are released at \[[🤗HuggingFace](https://huggingface.co/yrshi/AutoRefine-Qwen2.5-3B-Base)\].
 
 
-Official implementation of paper *Search and Refine During Think: Autonomous Retrieval‑Augmented Reasoning of LLMs*.
+Official implementation of NeurIPS 2025 paper *Search and Refine During Think: Autonomous Retrieval‑Augmented Reasoning of LLMs*.
 
 AutoRefine is an RL post-training framework that adopts a new "search-and-refine-during-think" paradigm. It introduces:
 - explicit **knowledge refinement steps** between successive search calls, enabling the model to iteratively filter, distill, and organize evidence before generating an answer.
