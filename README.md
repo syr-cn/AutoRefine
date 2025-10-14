@@ -9,7 +9,7 @@
 - Checkpoints are released at \[[🤗HuggingFace](https://huggingface.co/yrshi/AutoRefine-Qwen2.5-3B-Base)\].
 
 
-Official implementation of NeurIPS 2025 paper *Search and Refine During Think: Autonomous Retrieval‑Augmented Reasoning of LLMs*.
+Official implementation of **NeurIPS 2025 paper** *Search and Refine During Think: Facilitating Knowledge Refinement for Improved Retrieval-Augmented Reasoning*.
 
 AutoRefine is an RL post-training framework that adopts a new "search-and-refine-during-think" paradigm. It introduces:
 - explicit **knowledge refinement steps** between successive search calls, enabling the model to iteratively filter, distill, and organize evidence before generating an answer.
