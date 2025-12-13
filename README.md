@@ -5,12 +5,13 @@ Official implementation of **NeurIPS 2025 paper** *Search and Refine During Thin
 The authors have verified that this repo can be end-to-end reproduced within an hour with good internet connection.
 
 ## 🔥News
+- We have uploaded the checkpoint of AutoRefine-7B at \[[🤗HuggingFace](https://huggingface.co/yrshi/AutoRefine-Qwen2.5-7B-Base)\] ([#7](https://github.com/syr-cn/AutoRefine/issues/7))
 - This work got accepted by [NeurIPS 2025 (Poster)](https://neurips.cc/virtual/2025/poster/115806) 🎉🎉🎉
 - Update results of additional model size (7B) under more metrics (F1, Cover EM).
 - Support quick start of gradio demo or quick inference. Refer to [Quick Start](#quick-start).
 - Homepage is available at \[[Here](https://syr-cn.github.io/AutoRefine/)\]
 - Paper is available on \[[Arxiv](https://www.arxiv.org/pdf/2505.11277)\]
-- Checkpoints are released at \[[🤗HuggingFace](https://huggingface.co/yrshi/AutoRefine-Qwen2.5-3B-Base)\].
+- Checkpoints are released at \[[🤗HuggingFace](https://huggingface.co/collections/yrshi/autorefine)\].
 
 
 AutoRefine is an RL post-training framework that adopts a new "search-and-refine-during-think" paradigm. It introduces:
