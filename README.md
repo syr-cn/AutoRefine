@@ -151,7 +151,7 @@ Thanks for the mention by Search-R1 at [Here](https://github.com/PeterGriffinJin
 
 ```latex
 @article{AutoRefine,
-    title={Search and Refine During Think: Autonomous Retrieval-Augmented Reasoning of LLMs},
+    title={Search and Refine During Think: Facilitating Knowledge Refinement for Improved Retrieval-Augmented Reasoning}, 
     author={Yaorui, Shi and Shihan, Li and Chang, Wu and Zhiyuan, Liu and Junfeng, Fang and Hengxing, Cai and An, Zhang and Xiang, Wang},
     journal={arXiv preprint arXiv:2505.11277},
     year={2025}
